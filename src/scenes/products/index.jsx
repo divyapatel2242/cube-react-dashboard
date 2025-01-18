@@ -17,7 +17,7 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(100);
   const [rowCount, setRowCount] = useState(0);
 
   const navigate = useNavigate();
@@ -26,22 +26,22 @@ const Products = () => {
     navigate(`/product-detail/${params.row.id}`);
   };
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get("http://localhost:8080/cube-manage/product/get-all-products", {
-          params: { page, pageSize },
-        });
-        setProducts(response.data); 
-        setRowCount(response.data.totalElements);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchProducts = async (page, pageSize) => {
+    try {
+      const response = await axios.get("http://localhost:8080/cube-manage/product/get-all-products", {
+        params: { page, pageSize },
+      });
+      setProducts(response.data.productResponseData);
+      setRowCount(response.data.totalSize);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchProducts();
+  useEffect(() => {
+    fetchProducts(page, pageSize);
   }, [page, pageSize]);
 
 
@@ -138,7 +138,26 @@ const Products = () => {
           },
         }}
       >
-        <DataGrid checkboxSelection rows={products} columns={columns} onRowClick={handleRowClick} />
+        {/* <DataGrid checkboxSelection rows={products} columns={columns} onRowClick={handleRowClick} /> */}
+        <DataGrid
+          checkboxSelection
+          rows={products}
+          columns={columns}
+          pageSize={pageSize}
+          rowsPerPageOptions={[10, 20, 50]}
+          paginationMode="server" // Server-side pagination
+          rowCount={rowCount} // Total number of rows for pagination
+          loading={loading}
+          onPageChange={(newPage) => {
+            setPage(newPage);
+            fetchProducts(newPage, pageSize);
+          }}
+          onPageSizeChange={(newPageSize) => {
+            setPageSize(newPageSize);
+            fetchProducts(page, newPageSize);
+          }}
+          onRowClick={handleRowClick}
+        />
       </Box>
     </Box>
   );
